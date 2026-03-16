@@ -79,11 +79,15 @@ def main():
         if not filename.endswith(".pgn"):
             continue
 
-        input_path = os.path.join(DATA_DIR, filename)
-        output_path = os.path.join(
-            OUTPUT_DIR,
-            filename.replace(".pgn", "_filtered.pgn")
-        )
+        input_path = DATA_DIR / filename
+
+        output_filename = filename.replace(".pgn", "_filtered.pgn")
+        output_path = OUTPUT_DIR / output_filename
+
+        # Skip pgn files that have already been filtered
+        if output_path.exists():
+            print(f"Skipping {filename} (already filtered)")
+            continue
 
         print(f"Filtering {filename}")
         filter_file(input_path, output_path)

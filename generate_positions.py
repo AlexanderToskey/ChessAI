@@ -3,6 +3,7 @@
 import os
 import bz2
 import pickle
+import json
 import chess
 import chess.pgn
 from pathlib import Path

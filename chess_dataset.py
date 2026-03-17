@@ -18,14 +18,23 @@ class ChessDataset(Dataset):
     }
     """
 
-    def __init__(self, jsonl_file: str):
-        self.jsonl_file = Path(jsonl_file)
+    def __init__(self, jsonl_files):
+        if isinstance(jsonl_files, (str, Path)):
+            jsonl_files = [jsonl_files]
+
         self.data = []
 
-        # Load JSONL into memory (can switch to lazy loading if dataset is huge)
-        with open(self.jsonl_file, 'r') as f:
-            for line in f:
-                self.data.append(json.loads(line))
+        MAX_SAMPLES = 100000
+
+        for file in jsonl_files:
+            with open(file, 'r') as f:
+                for i, line in enumerate(f):
+                    # Limit the number of samples
+                    if i >= MAX_SAMPLES:
+                        break
+                    if i % 10000 == 0:
+                        print(f"{i} samples loaded")
+                    self.data.append(json.loads(line))
 
     def __len__(self):
         return len(self.data)
@@ -39,7 +48,7 @@ class ChessDataset(Dataset):
 
         # Convert FEN to (18,8,8) tensor
         board = chess.Board(fen)
-        board_tensor = board_to_tensor(board)             # numpy array
+        board_tensor = board_to_tensor(board)
         board_tensor = torch.tensor(board_tensor, dtype=torch.float32)
 
         # Convert move to class index

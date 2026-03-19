@@ -6,6 +6,7 @@ from pathlib import Path
 from utils.board_encoding import board_to_tensor
 from utils.move_encoding import uci_to_class
 from utils.elo_processing import elo_to_bucket
+from utils.move_masking import get_legal_move_mask
 
 class ChessDataset(Dataset):
     """
@@ -58,6 +59,8 @@ class ChessDataset(Dataset):
         # Convert ELO to skill bucket
         elo_bucket = elo_to_bucket(elo)
         elo_bucket = torch.tensor(elo_bucket, dtype=torch.long)
+
+        move_mask = get_legal_move_mask(board)  # (4096,)
 
         return {
             'board': board_tensor,

@@ -14,12 +14,10 @@ class ResidualBlock(nn.Module):
         self.bn2 = nn.BatchNorm2d(channels)
 
     def forward(self, x):
-
         residual = x
 
         x = F.relu(self.bn1(self.conv1(x)))
         x = self.bn2(self.conv2(x))
-
         x += residual
         x = F.relu(x)
 
@@ -52,15 +50,12 @@ class ChessCNN(nn.Module):
     def forward(self, board, skill):
 
         x = F.relu(self.input_bn(self.input_conv(board)))
-
         x = self.res_blocks(x)
-
         x = x.view(x.size(0), -1)
 
         skill_vec = self.skill_embedding(skill)
 
         x = torch.cat([x, skill_vec], dim=1)
-
         x = F.relu(self.fc1(x))
 
         moves = self.fc2(x)

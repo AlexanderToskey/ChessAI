@@ -7,6 +7,8 @@ def board_to_tensor(board):
 
     piece_map = board.piece_map()
 
+    # Chess pieces 
+    # True for white, False for black
     piece_to_channel = {
         (chess.PAWN, True): 0,
         (chess.KNIGHT, True): 1,

@@ -1,4 +1,4 @@
-#  AI Chess Teacher
+#  AI Chess Player
 
 This project implements a simple chess AI capable of making chess moves at various skill levels and providing natural language explanations for its decision making.
 

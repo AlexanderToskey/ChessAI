@@ -95,18 +95,27 @@ def main():
             board = batch['board'].to(DEVICE)
             skill = batch['elo_bucket'].to(DEVICE)
             move = batch['move_class'].to(DEVICE)
+            mask = batch['move_mask'].to(DEVICE)
 
             optimizer.zero_grad()
-            outputs = model(board, skill)
-            loss = criterion(outputs, move)
+            #outputs = model(board, skill)
+
+            # (B, 4096)
+            logits = model(board, skill)
+
+            # Apply legal moves mask
+            masked_logits = logits.masked_fill(mask == 0, -1e9)
+
+            loss = criterion(masked_logits, move)
+
             loss.backward()
             optimizer.step()
 
-            # Track the loss
+            # Track loss
             running_loss += loss.item() * board.size(0)
 
-            # Track the accuracy
-            _, predicted = torch.max(outputs, 1)
+            # Use masked logits for accuracy
+            predicted = masked_logits.argmax(dim=1)
             correct += (predicted == move).sum().item()
             total += move.size(0)
             

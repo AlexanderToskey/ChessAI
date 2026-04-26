@@ -7,6 +7,7 @@ from pathlib import Path
 from model import ChessCNN
 from utils.board_encoding import board_to_tensor
 from utils.move_encoding import class_to_uci
+from utils.move_masking import get_legal_move_mask
 
 def main():
     # Base directory
@@ -54,8 +55,17 @@ def main():
 
         # Predict the next move
         with torch.no_grad():
-            output = model(board_tensor, skill_tensor)
-            predicted_class = output.argmax(dim=1).item()
+            #output = model(board_tensor, skill_tensor)
+            #predicted_class = output.argmax(dim=1).item()
+
+            logits = model(board_tensor, skill_tensor)
+
+            mask = get_legal_move_mask(board)
+            mask = mask.unsqueeze(0).to(DEVICE)
+
+            masked_logits = logits.masked_fill(mask == 0, -1e9)
+
+            predicted_class = masked_logits.argmax(dim=1).item()
 
         uci_move = class_to_uci(predicted_class)
 

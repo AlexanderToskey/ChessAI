@@ -65,5 +65,6 @@ class ChessDataset(Dataset):
         return {
             'board': board_tensor,
             'move_class': move_class,
-            'elo_bucket': elo_bucket
+            'elo_bucket': elo_bucket,
+            'move_mask': move_mask
         }

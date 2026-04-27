@@ -9,6 +9,8 @@ from utils.board_encoding import board_to_tensor
 from utils.move_encoding import class_to_uci
 from utils.move_masking import get_legal_move_mask
 
+from utils.search import select_move_1ply
+
 def main():
     # Base directory
     BASE_DIR = Path(__file__).resolve().parent
@@ -48,6 +50,11 @@ def main():
         # Convert the FEN to a board representation
         board = chess.Board(fen)
 
+        move = select_move_1ply(model, board, elo_bucket, DEVICE)
+
+        print(f"\nSelected move: {move.uci()}")
+
+        """
         # Convert the board to a tensor
         board_tensor = torch.tensor(board_to_tensor(board), dtype=torch.float32)
         board_tensor = board_tensor.unsqueeze(0).to(DEVICE)
@@ -70,7 +77,8 @@ def main():
         uci_move = class_to_uci(predicted_class)
 
         print(f"\nPredicted move: {uci_move}")
-
+        """
+        
         # Stop if the user only wants to enter one FEN
         if multipleInputs != "Y":
             break

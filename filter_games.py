@@ -1,4 +1,3 @@
-
 # Imports
 import os
 import chess.pgn
@@ -16,15 +15,32 @@ OUTPUT_DIR = BASE_DIR / "filtered_games"
 # Minimum number of moves required for keeping
 MIN_MOVES = 10
 
+# Minimum ELO for one of the players
+MIN_ELO = 2000
+
 # Create the new filtered games directory
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def is_valid_game(game):
+
+    """
+    Verify that a game is valid and should be kept for training.
+    Called in filter_file()
+    """
+
     headers = game.headers
 
     # Must have ELO ratings
     if not headers["WhiteElo"].isdigit() or not headers["BlackElo"].isdigit():
         return False
+    
+    # Get the ELO of both players
+    white_elo = headers.get("WhiteElo", "?")
+    black_elo = headers.get("BlackElo", "?")
+    
+    # ELO filter 
+    #if int(white_elo) < MIN_ELO or int(black_elo) < MIN_ELO:
+    #    return False
 
     # Must end normally
     if headers.get("Termination") != "Normal":
@@ -45,15 +61,20 @@ def is_valid_game(game):
 
 def filter_file(input_path, output_path):
 
+    """
+    Filter out any undesired games from the input .pgn file
+    """
+
     with open(input_path) as pgn, open(output_path, "w") as outfile:
 
-        game_count = 0
-        kept_count = 0
+        game_count = 0  # Total games in file
+        kept_count = 0  # Total games kept
 
         while True:
 
             game = chess.pgn.read_game(pgn)
 
+            # If the game doesn't exist, we've reached the end
             if game is None:
                 break
 
@@ -74,11 +95,13 @@ def filter_file(input_path, output_path):
 
 def main():
 
+    # Loop through all .pgn files
     for filename in os.listdir(DATA_DIR):
 
         if not filename.endswith(".pgn"):
             continue
 
+        # Get the path to the file
         input_path = DATA_DIR / filename
 
         output_filename = filename.replace(".pgn", "_filtered.pgn")
@@ -90,6 +113,8 @@ def main():
             continue
 
         print(f"Filtering {filename}")
+
+        # Filter the file
         filter_file(input_path, output_path)
 
 

@@ -10,6 +10,7 @@ from utils.move_encoding import class_to_uci
 from utils.move_masking import get_legal_move_mask
 
 from utils.search import select_move_1ply
+#from utils.search import select_move_2ply
 
 def main():
     # Base directory
@@ -35,7 +36,8 @@ def main():
     multipleInputs = input("\nEnter multiple FENs? [Y/n]: ")
 
     # Ask the user what skill level they want the AI to play at
-    elo_bucket = int(input("Enter skill bucket (0–4): "))
+    #elo_bucket = int(input("Enter skill bucket (0–4): "))
+    elo_bucket = 4
 
     print("\nEnter 'q' to quit")
 
@@ -51,6 +53,7 @@ def main():
         board = chess.Board(fen)
 
         move = select_move_1ply(model, board, elo_bucket, DEVICE)
+        #move = select_move_2ply(model, board, elo_bucket, DEVICE)
 
         print(f"\nSelected move: {move.uci()}")
 

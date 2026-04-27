@@ -101,12 +101,21 @@ def main():
             #outputs = model(board, skill)
 
             # (B, 4096)
-            logits = model(board, skill)
+            logits, value_pred = model(board, skill)
 
             # Apply legal moves mask
             masked_logits = logits.masked_fill(mask == 0, -1e9)
 
-            loss = criterion(masked_logits, move)
+            policy_loss = criterion(masked_logits, move)
+
+            # Loss for material value
+            value_criterion = nn.MSELoss()
+
+            value_target = batch['value'].to(DEVICE).float().unsqueeze(1)
+            value_loss = value_criterion(value_pred, value_target)
+
+            # Fine tune 0.5
+            loss = policy_loss + 0.5 * value_loss
 
             loss.backward()
             optimizer.step()

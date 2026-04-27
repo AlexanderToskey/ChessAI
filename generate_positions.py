@@ -20,6 +20,16 @@ OUTPUT_DIR = BASE_DIR / "processed_positions"
 # Create the new processed positions directory
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+def result_to_value(result):
+    if result == "1-0":
+        return 1
+    elif result == "0-1":
+        return -1
+    elif result == "1/2-1/2":
+        return 0
+    else:
+        return None
+
 def process_game(game, outfile):
 
     board = game.board()
@@ -28,15 +38,28 @@ def process_game(game, outfile):
     black_elo = int(game.headers["BlackElo"])
 
     for move in game.mainline_moves():
+        
+        result_str = game.headers.get("Result", "*")
+        game_value = result_to_value(result_str)
+
+        # ❗ Skip incomplete games
+        if game_value is None:
+            return
 
         fen = board.fen()
 
         elo = white_elo if board.turn else black_elo
 
+        # 🔥 CRITICAL: value from perspective of side to move
+        position_value = game_value
+        if board.turn == chess.BLACK:
+            position_value = -position_value
+
         sample = {
             "fen": fen,
             "elo": elo,
-            "move": move.uci()
+            "move": move.uci(),
+            "value": position_value
         }
 
         outfile.write(json.dumps(sample) + "\n")

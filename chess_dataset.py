@@ -62,9 +62,12 @@ class ChessDataset(Dataset):
 
         move_mask = get_legal_move_mask(board)  # (4096,)
 
+        value = torch.tensor(sample['value'], dtype=torch.float32)
+
         return {
             'board': board_tensor,
             'move_class': move_class,
             'elo_bucket': elo_bucket,
-            'move_mask': move_mask
+            'move_mask': move_mask,
+            'value': value,
         }

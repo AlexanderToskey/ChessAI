@@ -9,7 +9,13 @@ def generate_explanation(features):
     
     if features["captures_hanging_piece"]:
         return "This move captures a hanging piece, winning material for free."
+    
+    if features["creates_skewer"]:
+        return "This move creates a skewer, forcing a high-value piece to move and exposing another."
 
+    if features["creates_pin"]:
+        return "This move creates a pin, restricting the opponent's piece from moving."
+    
     if features["creates_hanging_piece"]:
         return "This move creates a threat against an undefended piece."
 

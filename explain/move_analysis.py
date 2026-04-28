@@ -12,6 +12,35 @@ PIECE_VALUES = {
 
 CENTER_SQUARES = [chess.D4, chess.E4, chess.D5, chess.E5]
 
+DIRECTIONS = [
+    8, -8, 1, -1,   # rook directions
+    9, -9, 7, -7    # bishop directions
+]
+
+
+def is_on_board(square):
+    return 0 <= square < 64
+
+
+def same_line(sq1, sq2, direction):
+    # Prevent wrap-around (important for files/ranks)
+    if direction in [1, -1]:  # horizontal
+        return chess.square_rank(sq1) == chess.square_rank(sq2)
+    return True
+
+
+def scan_ray(board, start_sq, direction):
+    """Yield squares in a direction until edge"""
+    sq = start_sq
+    while True:
+        next_sq = sq + direction
+        if not is_on_board(next_sq):
+            break
+        if not same_line(sq, next_sq, direction):
+            break
+        yield next_sq
+        sq = next_sq
+
 
 def get_piece_value(piece):
     if piece is None:
@@ -28,6 +57,63 @@ def is_hanging(board: chess.Board, square: int):
 
     # Hanging = attacked and not defended
     return len(attackers) > 0 and len(defenders) == 0
+
+
+def creates_pin(board_after, move, moved_piece):
+    if moved_piece.piece_type not in [chess.BISHOP, chess.ROOK, chess.QUEEN]:
+        return False
+
+    for direction in DIRECTIONS:
+        ray = list(scan_ray(board_after, move.to_square, direction))
+
+        encountered = []
+
+        for sq in ray:
+            piece = board_after.piece_at(sq)
+            if piece:
+                encountered.append((sq, piece))
+                if len(encountered) == 2:
+                    break
+
+        if len(encountered) == 2:
+            first_sq, first_piece = encountered[0]
+            second_sq, second_piece = encountered[1]
+
+            # Check pin pattern: enemy piece in front, king behind
+            if (first_piece.color != moved_piece.color and
+                second_piece.color != moved_piece.color and
+                second_piece.piece_type == chess.KING):
+                return True
+
+    return False
+
+
+def creates_skewer(board_after, move, moved_piece):
+    if moved_piece.piece_type not in [chess.BISHOP, chess.ROOK, chess.QUEEN]:
+        return False
+
+    for direction in DIRECTIONS:
+        ray = list(scan_ray(board_after, move.to_square, direction))
+
+        encountered = []
+
+        for sq in ray:
+            piece = board_after.piece_at(sq)
+            if piece:
+                encountered.append((sq, piece))
+                if len(encountered) == 2:
+                    break
+
+        if len(encountered) == 2:
+            first_sq, first_piece = encountered[0]
+            second_sq, second_piece = encountered[1]
+
+            if first_piece.color != moved_piece.color and second_piece.color != moved_piece.color:
+                if (get_piece_value(first_piece) >
+                        get_piece_value(second_piece)):
+                    return True
+
+    return False
 
 
 def analyze_move(board: chess.Board, move: chess.Move):
@@ -150,5 +236,15 @@ def analyze_move(board: chess.Board, move: chess.Move):
             if is_hanging(after, square):
                 features["creates_hanging_piece"] = True
                 break
+
+    # --- Pin Detection ---
+    features["creates_pin"] = False
+    if moved_piece:
+        features["creates_pin"] = creates_pin(after, move, moved_piece)
+
+    # --- Skewer Detection ---
+    features["creates_skewer"] = False
+    if moved_piece:
+        features["creates_skewer"] = creates_skewer(after, move, moved_piece)
 
     return features

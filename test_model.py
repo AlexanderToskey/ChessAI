@@ -1,4 +1,3 @@
-
 # Imports
 import torch
 import chess
@@ -9,8 +8,11 @@ from utils.board_encoding import board_to_tensor
 from utils.move_encoding import class_to_uci
 from utils.move_masking import get_legal_move_mask
 
-from utils.search import select_move_1ply
+#from utils.search import select_move_1ply
 #from utils.search import select_move_2ply
+
+from utils.search import alpha_beta_root
+from utils.endgame import is_endgame
 
 def main():
     # Base directory
@@ -21,6 +23,9 @@ def main():
 
     # Set the training device to CPU
     DEVICE = torch.device("cpu")
+
+    MATE_SCORE = 100000
+    TACTICAL_THRESHOLD = 300  # Free piece
 
     # Load the model
     if not MODEL_PATH.exists():
@@ -33,7 +38,7 @@ def main():
     print(f"Loaded model from: {MODEL_PATH}")
 
     # Ask the user if they'd like to enter one or multiple FENs
-    multipleInputs = input("\nEnter multiple FENs? [Y/n]: ")
+    multipleInputs = input("\nEnter multiple FENs? [y/n]: ")
 
     # Ask the user what skill level they want the AI to play at
     #elo_bucket = int(input("Enter skill bucket (0–4): "))
@@ -52,23 +57,26 @@ def main():
         # Convert the FEN to a board representation
         board = chess.Board(fen)
 
-        move = select_move_1ply(model, board, elo_bucket, DEVICE)
+        #move = select_move_1ply(model, board, elo_bucket, DEVICE)
         #move = select_move_2ply(model, board, elo_bucket, DEVICE)
 
-        print(f"\nSelected move: {move.uci()}")
+        #print(f"\nSelected move: {move.uci()}")
 
-        """
+        
         # Convert the board to a tensor
         board_tensor = torch.tensor(board_to_tensor(board), dtype=torch.float32)
         board_tensor = board_tensor.unsqueeze(0).to(DEVICE)
         skill_tensor = torch.tensor([elo_bucket], dtype=torch.long).to(DEVICE)
 
+        move = None
+
+        """
         # Predict the next move
         with torch.no_grad():
             #output = model(board_tensor, skill_tensor)
             #predicted_class = output.argmax(dim=1).item()
 
-            logits = model(board_tensor, skill_tensor)
+            logits, values = model(board_tensor, skill_tensor)
 
             mask = get_legal_move_mask(board)
             mask = mask.unsqueeze(0).to(DEVICE)
@@ -80,10 +88,37 @@ def main():
         uci_move = class_to_uci(predicted_class)
 
         print(f"\nPredicted move: {uci_move}")
+
         """
+
+        piece_count, total_material = is_endgame(board)
+
+        #if is_endgame(board):
+        if piece_count <= 4:
+            print("Using alpha-beta search, depth=6")
+            move = alpha_beta_root(board, depth=6)
+        elif piece_count <= 6:
+            print("Using alpha-beta search, depth=5")
+            move = alpha_beta_root(board, depth=5)
+        else:
+            print("Using CNN")
+
+            with torch.no_grad():
+                logits, values = model(board_tensor, skill_tensor)
+
+                mask = get_legal_move_mask(board)
+                mask = mask.unsqueeze(0).to(DEVICE)
+
+                masked_logits = logits.masked_fill(mask == 0, -1e9)
+                predicted_class = masked_logits.argmax(dim=1).item()
+
+            move = chess.Move.from_uci(class_to_uci(predicted_class))
+        
+        # Print the selected move
+        print(f"\nSelected move: {move.uci()}")
         
         # Stop if the user only wants to enter one FEN
-        if multipleInputs != "Y":
+        if multipleInputs != "y":
             break
 
 if __name__ == "__main__":

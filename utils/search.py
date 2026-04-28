@@ -3,6 +3,143 @@ import chess
 from utils.board_encoding import board_to_tensor
 from utils.move_masking import get_legal_move_mask
 
+import chess
+import math
+
+from evaluate import evaluate_position
+
+
+def alpha_beta_root(board: chess.Board, depth: int):
+    """
+    Root function: returns the best move using alpha-beta search.
+    """
+    best_move = None
+    alpha = -math.inf
+    beta = math.inf
+
+    maximizing = board.turn == chess.WHITE
+
+    moves = list(board.legal_moves)
+
+    # Move ordering
+    # Promotions, then checks, then captures
+    moves.sort(key=lambda move: score_move(board, move), reverse=True)
+
+    #print(moves)
+
+    for move in moves:
+        board.push(move)
+        score = alpha_beta(board, depth - 1, alpha, beta, not maximizing)
+        board.pop()
+
+        if maximizing:
+            if score > alpha:
+                alpha = score
+                best_move = move
+        else:
+            if score < beta:
+                beta = score
+                best_move = move
+        #print(f"move: {move}")
+        #print(f"alpha: {alpha}")
+        #print(f"beta: {beta}")
+        #print(f"score: {score}\n")
+
+    return best_move
+
+
+def alpha_beta(board: chess.Board, depth: int, alpha: float, beta: float, maximizing: bool):
+    """
+    Alpha-beta pruning search helper.
+    Returns evaluation score.
+    """
+
+    # --- 1. Terminal / base case ---
+    if board.is_checkmate():
+        if board.turn:
+            return -100000 - depth
+        else:
+            return 100000 + depth
+
+    if board.is_stalemate() or board.is_insufficient_material():
+        return 0
+
+    if depth == 0:
+        return evaluate_position(board)
+
+    moves = list(board.legal_moves)
+
+    # Move ordering
+    # Promotions, then checks, then captures
+    moves.sort(key=lambda move: score_move(board, move), reverse=True)
+
+    # --- 2. Maximizing player (White) ---
+    if maximizing:
+        value = -math.inf
+
+        for move in moves:
+            board.push(move)
+            value = max(value, alpha_beta(board, depth - 1, alpha, beta, False))
+            board.pop()
+
+            alpha = max(alpha, value)
+
+            # --- PRUNE ---
+            if alpha >= beta:
+                break
+
+        return value
+
+    # --- 3. Minimizing player (Black) ---
+    else:
+        value = math.inf
+
+        for move in moves:
+            board.push(move)
+            value = min(value, alpha_beta(board, depth - 1, alpha, beta, True))
+            board.pop()
+
+            beta = min(beta, value)
+
+            # --- PRUNE ---
+            if alpha >= beta:
+                break
+
+        return value
+
+
+def score_move(board: chess.Board, move: chess.Move):
+
+    """
+    Helper to score a move for alpha-beta
+    Promotions receive highest priority, then checks, then captures
+    """
+
+    score = 0
+
+    # --- 1. Promotions (highest priority) ---
+    if move.promotion:
+        score += 10000
+
+    # --- 2. Checks ---
+    if board.gives_check(move):
+        score += 5000
+
+    # --- 3. Captures ---
+    if board.is_capture(move):
+        score += 1000
+
+        # Optional: MVV-LVA (Most Valuable Victim - Least Valuable Attacker)
+        victim = board.piece_at(move.to_square)
+        attacker = board.piece_at(move.from_square)
+
+        if victim and attacker:
+            score += 10 * victim.piece_type - attacker.piece_type
+
+    return score
+
+"""
+
 def select_move_1ply(model, board, skill, device):
     model.eval()
 
@@ -106,6 +243,7 @@ def get_material_value(board):
 
     return value
 
+"""
 
 """
 def select_move_1ply(model, board, skill, device):

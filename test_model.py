@@ -16,6 +16,10 @@ from utils.search import tactical_search
 from utils.search import is_blunder
 from utils.endgame import is_endgame
 
+# Explanation Imports
+from explain.move_analysis import analyze_move
+from explain.explain import generate_explanation
+
 def main():
     # Base directory
     BASE_DIR = Path(__file__).resolve().parent
@@ -74,51 +78,6 @@ def main():
 
         move = None
 
-        """
-        # Predict the next move
-        with torch.no_grad():
-            #output = model(board_tensor, skill_tensor)
-            #predicted_class = output.argmax(dim=1).item()
-
-            logits, values = model(board_tensor, skill_tensor)
-
-            mask = get_legal_move_mask(board)
-            mask = mask.unsqueeze(0).to(DEVICE)
-
-            masked_logits = logits.masked_fill(mask == 0, -1e9)
-
-            predicted_class = masked_logits.argmax(dim=1).item()
-
-        uci_move = class_to_uci(predicted_class)
-
-        print(f"\nPredicted move: {uci_move}")
-
-        """
-        """
-        piece_count, total_material = is_endgame(board)
-
-        #if is_endgame(board):
-        if piece_count <= 4:
-            print("Using alpha-beta search, depth=6")
-            move = alpha_beta_root(board, depth=6)
-        elif piece_count <= 6:
-            print("Using alpha-beta search, depth=5")
-            move = alpha_beta_root(board, depth=5)
-        else:
-            print("Using CNN")
-
-            with torch.no_grad():
-                logits, values = model(board_tensor, skill_tensor)
-
-                mask = get_legal_move_mask(board)
-                mask = mask.unsqueeze(0).to(DEVICE)
-
-                masked_logits = logits.masked_fill(mask == 0, -1e9)
-                predicted_class = masked_logits.argmax(dim=1).item()
-
-            move = chess.Move.from_uci(class_to_uci(predicted_class))
-        """
-
         piece_count, total_material = is_endgame(board)
 
         # --- 1. Always check for tactics first ---
@@ -160,7 +119,7 @@ def main():
 
             # --- Blunder check ---
             if is_blunder(board, candidate_move):
-                print("CNN move is a blunder, searching alternatives...")
+                print(f"CNN move: {candidate_move} is a blunder, searching alternatives...")
 
                 # Try alternatives using tactical search
                 safe_move, safe_score = tactical_search(board, depth=TACTICAL_DEPTH)
@@ -171,6 +130,22 @@ def main():
 
         # Print the selected move
         print(f"\nSelected move: {move.uci()}")
+
+        # --- Generate Explanation ---
+        try:
+            features = analyze_move(board, move)
+            explanation = generate_explanation(features)
+
+            print(f"Explanation: {explanation}")
+
+            # Debug
+            #print("Features:", features)
+
+        except Exception as e:
+            print("Explanation generation failed:", e)
+
+            # Debug
+            #print("Features: ", features)
         
         # Stop if the user only wants to enter one FEN
         if multipleInputs != "y":
@@ -178,3 +153,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

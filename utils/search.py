@@ -138,6 +138,63 @@ def score_move(board: chess.Board, move: chess.Move):
 
     return score
 
+def tactical_search(board: chess.Board, depth: int = 2):
+
+    """
+    Shallow alpha-beta search for opening and middlegame
+    """
+
+    best_move = None
+    alpha = -float('inf')
+    beta = float('inf')
+
+    maximizing = board.turn == chess.WHITE
+
+    moves = list(board.legal_moves)
+    moves.sort(key=lambda move: score_move(board, move), reverse=True)
+
+    for move in moves:
+        board.push(move)
+        score = alpha_beta(board, depth - 1, alpha, beta, not maximizing)
+        board.pop()
+
+        if maximizing:
+            if score > alpha:
+                alpha = score
+                best_move = move
+        else:
+            if score < beta:
+                beta = score
+                best_move = move
+
+    return best_move, (alpha if maximizing else beta)
+
+
+
+def is_blunder(board: chess.Board, move: chess.Move, threshold=300):
+    """
+    Returns True if the move allows the opponent to gain a large advantage.
+    """
+    board.push(move)
+
+    # Opponent tries to maximize their gain
+    opponent_score = alpha_beta(
+        board,
+        depth=1,  # opponent gets 1 move
+        alpha=-float('inf'),
+        beta=float('inf'),
+        maximizing=(board.turn == chess.WHITE)
+    )
+
+    board.pop()
+
+    # If it's bad for us, opponent_score will be large (for them)
+    # Convert perspective:
+    if board.turn == chess.WHITE:
+        return opponent_score < -threshold
+    else:
+        return opponent_score > threshold
+
 """
 
 def select_move_1ply(model, board, skill, device):

@@ -12,6 +12,8 @@ from utils.move_masking import get_legal_move_mask
 #from utils.search import select_move_2ply
 
 from utils.search import alpha_beta_root
+from utils.search import tactical_search
+from utils.search import is_blunder
 from utils.endgame import is_endgame
 
 def main():
@@ -90,7 +92,7 @@ def main():
         print(f"\nPredicted move: {uci_move}")
 
         """
-
+        """
         piece_count, total_material = is_endgame(board)
 
         #if is_endgame(board):
@@ -113,7 +115,58 @@ def main():
                 predicted_class = masked_logits.argmax(dim=1).item()
 
             move = chess.Move.from_uci(class_to_uci(predicted_class))
-        
+        """
+
+        piece_count, total_material = is_endgame(board)
+
+        # --- 1. Always check for tactics first ---
+        tactical_move, tactical_score = tactical_search(board, depth=5)
+
+        print(f"Tactical score: {tactical_score}")
+
+        if abs(tactical_score) >= 100000 - 10:
+            print("Tactical: Found forced mate")
+            move = tactical_move
+
+        elif abs(tactical_score) >= TACTICAL_THRESHOLD:
+            print("Tactical: Found winning material")
+            move = tactical_move
+
+        # --- 2. Endgame search ---
+        elif piece_count <= 4:
+            print("Endgame search depth=6")
+            move = alpha_beta_root(board, depth=6)
+
+        elif piece_count <= 6:
+            print("Endgame search depth=5")
+            move = alpha_beta_root(board, depth=5)
+
+        # --- 3. Otherwise use CNN ---
+        else:
+            print("Using CNN (middlegame/opening)")
+
+            with torch.no_grad():
+                logits, values = model(board_tensor, skill_tensor)
+
+                mask = get_legal_move_mask(board)
+                mask = mask.unsqueeze(0).to(DEVICE)
+
+                masked_logits = logits.masked_fill(mask == 0, -1e9)
+                predicted_class = masked_logits.argmax(dim=1).item()
+
+            candidate_move = chess.Move.from_uci(class_to_uci(predicted_class))
+
+            # --- Blunder check ---
+            if is_blunder(board, candidate_move):
+                print("CNN move is a blunder, searching alternatives...")
+
+                # Try alternatives using tactical search
+                safe_move, safe_score = tactical_search(board, depth=2)
+
+                move = safe_move
+            else:
+                move = candidate_move
+
         # Print the selected move
         print(f"\nSelected move: {move.uci()}")
         

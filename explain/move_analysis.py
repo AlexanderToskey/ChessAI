@@ -18,6 +18,17 @@ def get_piece_value(piece):
         return 0
     return PIECE_VALUES[piece.piece_type]
 
+def is_hanging(board: chess.Board, square: int):
+    piece = board.piece_at(square)
+    if piece is None:
+        return False
+
+    attackers = board.attackers(not piece.color, square)
+    defenders = board.attackers(piece.color, square)
+
+    # Hanging = attacked and not defended
+    return len(attackers) > 0 and len(defenders) == 0
+
 
 def analyze_move(board: chess.Board, move: chess.Move):
 
@@ -34,7 +45,8 @@ def analyze_move(board: chess.Board, move: chess.Move):
         develops_piece
         is_trade
         is_favorable_trade
-        
+        captures_hanging_piece
+        creates_hanging_piece
     
     """
 
@@ -120,6 +132,23 @@ def analyze_move(board: chess.Board, move: chess.Move):
                 features["is_trade"] = True
                 if gain >= 0:
                     features["is_favorable_trade"] = True
+                break
+
+    # --- Hanging Piece Capture ---
+    features["captures_hanging_piece"] = False
+    if captured_piece:
+        if is_hanging(before, move.to_square):
+            features["captures_hanging_piece"] = True
+
+    # --- Creates Hanging Piece ---
+    features["creates_hanging_piece"] = False
+
+    # Look at all opponent pieces after the move
+    for square in chess.SQUARES:
+        piece = after.piece_at(square)
+        if piece and piece.color != moved_piece.color:
+            if is_hanging(after, square):
+                features["creates_hanging_piece"] = True
                 break
 
     return features

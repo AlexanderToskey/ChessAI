@@ -6,6 +6,12 @@ def generate_explanation(features):
 
     if features["is_checkmate"]:
         return "This move delivers checkmate."
+    
+    if features["captures_hanging_piece"]:
+        return "This move captures a hanging piece, winning material for free."
+
+    if features["creates_hanging_piece"]:
+        return "This move creates a threat against an undefended piece."
 
     if features["is_check"] and features["creates_fork"]:
         return "This move delivers check while creating a fork, attacking multiple pieces."

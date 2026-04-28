@@ -29,6 +29,8 @@ def main():
     MATE_SCORE = 100000
     TACTICAL_THRESHOLD = 300  # Free piece
 
+    TACTICAL_DEPTH = 3
+
     # Load the model
     if not MODEL_PATH.exists():
         raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
@@ -120,7 +122,7 @@ def main():
         piece_count, total_material = is_endgame(board)
 
         # --- 1. Always check for tactics first ---
-        tactical_move, tactical_score = tactical_search(board, depth=5)
+        tactical_move, tactical_score = tactical_search(board, depth=TACTICAL_DEPTH)
 
         print(f"Tactical score: {tactical_score}")
 
@@ -161,7 +163,7 @@ def main():
                 print("CNN move is a blunder, searching alternatives...")
 
                 # Try alternatives using tactical search
-                safe_move, safe_score = tactical_search(board, depth=2)
+                safe_move, safe_score = tactical_search(board, depth=TACTICAL_DEPTH)
 
                 move = safe_move
             else:

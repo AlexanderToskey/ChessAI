@@ -171,7 +171,7 @@ def tactical_search(board: chess.Board, depth: int = 2):
 
 
 
-def is_blunder(board: chess.Board, move: chess.Move, threshold=300):
+def is_blunder(board: chess.Board, move: chess.Move, threshold=200):
     """
     Returns True if the move allows the opponent to gain a large advantage.
     """
@@ -180,7 +180,7 @@ def is_blunder(board: chess.Board, move: chess.Move, threshold=300):
     # Opponent tries to maximize their gain
     opponent_score = alpha_beta(
         board,
-        depth=1,  # opponent gets 1 move
+        depth=3,  # opponent gets 2 moves
         alpha=-float('inf'),
         beta=float('inf'),
         maximizing=(board.turn == chess.WHITE)

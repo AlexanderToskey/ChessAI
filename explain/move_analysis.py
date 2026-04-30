@@ -133,6 +133,8 @@ def analyze_move(board: chess.Board, move: chess.Move):
         is_favorable_trade
         captures_hanging_piece
         creates_hanging_piece
+        creates_pin
+        creates_skewer
     
     """
 

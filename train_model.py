@@ -46,7 +46,7 @@ def main():
     # Hyperparameters
     BATCH_SIZE = 128
     LEARNING_RATE = 0.001
-    EPOCHS = 6
+    EPOCHS = 20
 
     # Set the training device to CPU
     DEVICE = torch.device("cpu")

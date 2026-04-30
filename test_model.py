@@ -116,7 +116,7 @@ def main():
                 predicted_class = masked_logits.argmax(dim=1).item()
 
             candidate_move = chess.Move.from_uci(class_to_uci(predicted_class))
-
+            
             # --- Blunder check ---
             if is_blunder(board, candidate_move):
                 print(f"CNN move: {candidate_move} is a blunder, searching alternatives...")

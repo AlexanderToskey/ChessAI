@@ -1,6 +1,6 @@
 #  AI Chess Player
 
-This project implements a simple chess AI capable of making chess moves at various skill levels and providing natural language explanations for its decision making.
+This project implements a chess AI system capable of making chess moves at various skill levels and providing natural language explanations for its decision making. It combines a convolutional neural network with an alpha-beta tree search to evaluate positions and return the best move it finds.
 
 ### How to run
 
@@ -9,9 +9,32 @@ This project implements a simple chess AI capable of making chess moves at vario
    pip install -r requirements.txt
    ```
 
+**Download chess games in PGN format**
+
+Navigate to Lichess.org's open database: https://database.lichess.org/  
+
+Download the .pgn.zst files you wish to train the model with. 
+Create a new directory called data/ in the main project directory and copy these files into this directory.
+This is required for running both the independent scripts and the Jupyter notebook.
+
+**Preprocessing**
+
+1. Filter out low-quality games
+
+   ```bash
+   python filter_games.py
+   ```
+
+2. Convert games to training data
+
+   ```bash
+   python generate_positions.py
+   ```
+
 **Training the move prediction model**
 
 If you want to train the move prediction model, run train_model.py
+
    ```bash
    python train_model.py
    ```
@@ -20,7 +43,8 @@ It will automatically save to the models folder. You can then run test_model.py 
 
 **Getting a move prediction**
 
-First, run test_model.py
+Run test_model.py
+
    ```bash
    python test_model.py
    ```

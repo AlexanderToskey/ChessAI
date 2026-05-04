@@ -24,7 +24,7 @@ def is_endgame(board: chess.Board):
 
     # Check for queens
     has_queens = (
-        len(board.pieces(chess.QUEEN, chess.WHITE)) > 0 or
+        len(board.pieces(chess.QUEEN, chess.WHITE)) > 0 and
         len(board.pieces(chess.QUEEN, chess.BLACK)) > 0
     )
 
@@ -35,4 +35,4 @@ def is_endgame(board: chess.Board):
 
     #return few_pieces or low_material or no_queens
     #return few_pieces or low_material
-    return piece_count, total_material
+    return piece_count, total_material, has_queens

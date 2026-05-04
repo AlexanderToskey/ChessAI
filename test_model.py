@@ -78,14 +78,27 @@ def main():
 
         move = None
 
-        piece_count, total_material = is_endgame(board)
+        piece_count, total_material, has_queens = is_endgame(board)
 
         # --- 1. Always check for tactics first ---
         tactical_move, tactical_score = tactical_search(board, depth=TACTICAL_DEPTH)
 
         print(f"Tactical score: {tactical_score}")
 
-        if abs(tactical_score) >= 100000 - 10:
+                # --- 2. Endgame search ---
+        if piece_count <= 4:
+            print("Endgame search depth=6")
+            move = alpha_beta_root(board, depth=6)
+
+        elif piece_count <= 15:
+            print("Endgame search depth=5")
+            move = alpha_beta_root(board, depth=5)
+
+        elif piece_count <= 20 and not has_queens:
+            print("Endgame search depth=5")
+            move = alpha_beta_root(board, depth=5)
+
+        elif abs(tactical_score) >= 100000 - 10:
             print("Tactical: Found forced mate")
             move = tactical_move
 
@@ -93,19 +106,13 @@ def main():
             print("Tactical: Found winning material")
             move = tactical_move
 
-        # --- 2. Endgame search ---
-        elif piece_count <= 4:
-            print("Endgame search depth=6")
-            move = alpha_beta_root(board, depth=6)
 
-        elif piece_count <= 6:
-            print("Endgame search depth=5")
-            move = alpha_beta_root(board, depth=5)
 
         # --- 3. Otherwise use CNN ---
         else:
             print("Using CNN (middlegame/opening)")
 
+            
             with torch.no_grad():
                 logits, values = model(board_tensor, skill_tensor)
 
@@ -116,6 +123,7 @@ def main():
                 predicted_class = masked_logits.argmax(dim=1).item()
 
             candidate_move = chess.Move.from_uci(class_to_uci(predicted_class))
+            print("Values: ", values)
             
             # --- Blunder check ---
             if is_blunder(board, candidate_move):

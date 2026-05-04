@@ -39,8 +39,8 @@ def is_valid_game(game):
     black_elo = headers.get("BlackElo", "?")
     
     # ELO filter 
-    #if int(white_elo) < MIN_ELO or int(black_elo) < MIN_ELO:
-    #    return False
+    if int(white_elo) < MIN_ELO or int(black_elo) < MIN_ELO:
+        return False
 
     # Must end normally
     if headers.get("Termination") != "Normal":

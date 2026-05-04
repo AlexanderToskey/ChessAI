@@ -50,7 +50,7 @@ def process_game(game, outfile):
 
         elo = white_elo if board.turn else black_elo
 
-        # 🔥 CRITICAL: value from perspective of side to move
+        # CRITICAL: value from perspective of side to move
         position_value = game_value
         if board.turn == chess.BLACK:
             position_value = -position_value
